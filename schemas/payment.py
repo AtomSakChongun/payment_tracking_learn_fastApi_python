@@ -40,3 +40,19 @@ class TransactionSummary(BaseModel):
     total_income: float
     total_expense: float
     balance: float
+
+
+# Schema สำหรับตั้งงบประมาณ
+class BudgetCreate(BaseModel):
+    month: str = Field(..., pattern=r"^\d{4}-\d{2}$", description="เดือน รูปแบบ YYYY-MM")
+    amount: float = Field(..., ge=0, description="งบประมาณ (ต้องมากกว่าหรือเท่ากับ 0)")
+
+
+# Schema สำหรับตอบกลับงบประมาณ
+class BudgetResponse(BaseModel):
+    id: int
+    month: str
+    amount: float
+
+    model_config = {"from_attributes": True}
+

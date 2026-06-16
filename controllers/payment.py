@@ -1,13 +1,38 @@
+from datetime import date, timedelta
 from sqlalchemy.orm import Session
-from sqlalchemy import func
-from models.payment import Transaction
-from schemas.payment import TransactionCreate, TransactionUpdate
+from sqlalchemy import func, or_
+from models.payment import Transaction, Budget
+from schemas.payment import TransactionCreate, TransactionUpdate, BudgetCreate
 
 
-def get_all_transactions(db: Session, type: str | None = None):
+def get_all_transactions(
+    db: Session,
+    type: str | None = None,
+    search: str | None = None,
+    start_date: date | None = None,
+    end_date: date | None = None,
+):
     query = db.query(Transaction)
+    
     if type:
         query = query.filter(Transaction.type == type)
+        
+    if search:
+        query = query.filter(
+            or_(
+                Transaction.title.ilike(f"%{search}%"),
+                Transaction.category.ilike(f"%{search}%"),
+                Transaction.note.ilike(f"%{search}%"),
+            )
+        )
+        
+    if start_date:
+        query = query.filter(Transaction.created_at >= start_date)
+        
+    if end_date:
+        # Include the full end date by checking up to the next day's start
+        query = query.filter(Transaction.created_at < end_date + timedelta(days=1))
+        
     return query.order_by(Transaction.created_at.desc()).all()
 
 
@@ -67,3 +92,28 @@ def reset_all_transactions(db: Session):
     deleted_count = db.query(Transaction).delete()
     db.commit()
     return deleted_count
+
+
+def get_budget_by_month(db: Session, month: str):
+    return db.query(Budget).filter(Budget.month == month).first()
+
+
+def set_budget(db: Session, budget: BudgetCreate):
+    db_budget = get_budget_by_month(db, budget.month)
+    if db_budget:
+        db_budget.amount = budget.amount
+    else:
+        db_budget = Budget(month=budget.month, amount=budget.amount)
+        db.add(db_budget)
+    db.commit()
+    db.refresh(db_budget)
+    return db_budget
+
+
+def delete_budget(db: Session, month: str):
+    db_budget = get_budget_by_month(db, month)
+    if db_budget:
+        db.delete(db_budget)
+        db.commit()
+        return True
+    return False

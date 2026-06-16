@@ -14,3 +14,12 @@ class Transaction(Base):
     note = Column(String, nullable=True)             # หมายเหตุ
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(DateTime(timezone=True), onupdate=func.now())
+
+
+class Budget(Base):
+    __tablename__ = "budgets"
+
+    id = Column(Integer, primary_key=True, index=True)
+    month = Column(String, unique=True, index=True, nullable=False)  # รูปแบบ "YYYY-MM"
+    amount = Column(Float, nullable=False)                           # งบประมาณที่ตั้งไว้
+

@@ -1,3 +1,4 @@
+from datetime import date
 from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.orm import Session
 from database import get_db
@@ -16,10 +17,19 @@ def get_summary(db: Session = Depends(get_db)):
 @router.get("/", response_model=list[TransactionResponse])
 def get_all_transactions(
     type: str | None = Query(default=None, description="กรองตามประเภท: income หรือ expense"),
+    search: str | None = Query(default=None, description="ค้นหารายละเอียด หรือ หมวดหมู่"),
+    start_date: date | None = Query(default=None, description="วันที่เริ่มต้น (YYYY-MM-DD)"),
+    end_date: date | None = Query(default=None, description="วันที่สิ้นสุด (YYYY-MM-DD)"),
     db: Session = Depends(get_db),
 ):
-    """ดึงรายการทั้งหมด (กรองตาม type ได้)"""
-    return transaction_controller.get_all_transactions(db, type)
+    """ดึงรายการทั้งหมด (กรองตาม type, ค้นหา, และช่วงวันที่ได้)"""
+    return transaction_controller.get_all_transactions(
+        db=db,
+        type=type,
+        search=search,
+        start_date=start_date,
+        end_date=end_date,
+    )
 
 
 @router.get("/{transaction_id}", response_model=TransactionResponse)
